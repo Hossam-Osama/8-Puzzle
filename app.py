@@ -1,4 +1,4 @@
-
+import time
 
 
 goal = [[0, 1, 2],
@@ -45,17 +45,11 @@ def print_puzzle(puzzle):
     print()
 
 def bfs(start_puzzle):
-  
-    return None 
-
-def dfs(start_puzzle, max_depth=float('inf')):
-  
     return None
-
+def dfs(start_puzzle, max_depth=float('inf')):
+    return None
 def iddfs(start_puzzle, max_depth=50):
-  
-    return None  
-
+    return None
 # Manhattan Distance Heuristic
 def manhattan(puzzle):
    
@@ -68,10 +62,10 @@ def euclideane(puzzle):
 
 # A* Search
 def a_star(start_puzzle, heuristic):
-  
     return None
 
-initial_state = [[1, 2, 5],
-                 [3, 4, 0],
-                 [6, 7, 8]]
+# Example puzzle state
+initial_state = [[1, 8, 2],
+                 [0, 4, 3],
+                 [7, 6, 5]]
 
