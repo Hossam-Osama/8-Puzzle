@@ -1,3 +1,8 @@
+
+
+
+import heapq
+import math
 import time
 
 
@@ -38,6 +43,9 @@ def neighbors(puzzle):
             neighbors.append((neighbor, direction))
     return neighbors
 
+def tuplee(puzzle):
+    return tuple(tuple(row) for row in puzzle)
+
 
 def print_puzzle(puzzle):
     for row in puzzle:
@@ -45,23 +53,62 @@ def print_puzzle(puzzle):
     print()
 
 def bfs(start_puzzle):
-    return None
-def dfs(start_puzzle, max_depth=float('inf')):
-    return None
-def iddfs(start_puzzle, max_depth=50):
-    return None
-# Manhattan Distance Heuristic
-def manhattan(puzzle):
-   
-    return 0
-
-# Euclidean Distance Heuristic
-def euclideane(puzzle):
   
-    return 0
+    return None 
+
+def dfs(start_puzzle, max_depth=float('inf')):
+  
+    return None
+
+def iddfs(start_puzzle, max_depth=50):
+  
+    return None  
+
+
+def manhattan(puzzle):
+    distance = 0
+    for i in range(3):
+        for j in range(3):
+            path = puzzle[i][j]
+            if path != 0:
+                goalx, goaly = path // 3, path % 3
+                distance += abs(i - goalx) + abs(j - goaly)
+    return distance
+
+def euclideane(puzzle):
+    distance = 0
+    for i in range(3):
+        for j in range(3):
+            path = puzzle[i][j]
+            if path != 0:
+                goalx, goaly = path // 3, path % 3
+                distance += math.sqrt((i - goalx)**2 + (j - goaly)**2)
+    return distance
 
 # A* Search
-def a_star(start_puzzle, heuristic):
+
+def A_star(start_puzzle, heuristic):
+    start_time = time.time()
+    frontier = []
+    heapq.heappush(frontier, (0, start_puzzle, []))  
+    explored = set()
+    nodes_expanded = 0
+    
+    while frontier:
+        cost, puzzle, path = heapq.heappop(frontier)   ## he pop the smallest here according to the cost
+        if is_goal_reached(puzzle):
+            path_cost = len(path) 
+            return path, path_cost, nodes_expanded, len(path), time.time() - start_time
+        
+        explored.add(tuplee(puzzle))
+        for neighbor, move_direction in neighbors(puzzle):
+            if tuplee(neighbor) not in explored:
+                new_path = path + [move_direction]
+                new_cost = len(new_path) + heuristic(neighbor)  
+                heapq.heappush(frontier, (new_cost, neighbor, new_path))
+                explored.add(tuplee(neighbor))
+                nodes_expanded += 1  
+    
     return None
 
 # Example puzzle state
@@ -69,3 +116,12 @@ initial_state = [[1, 8, 2],
                  [0, 4, 3],
                  [7, 6, 5]]
 
+# Running A* with Manhattan heuristic
+print("A* with Manhattan Distance:")
+path, path_cost, nodes_expanded, search_depth, runtime = A_star(initial_state, manhattan)
+print(f"Path: {path}\nCost of Path: {path_cost}\nNodes Expanded: {nodes_expanded}\nSearch Depth: {search_depth}\nRuntime: {runtime:.4f} seconds\n")
+
+# Running A* with Euclidean heuristic
+print("A* with Euclidean Distance:")
+path, path_cost, nodes_expanded, search_depth, runtime = A_star(initial_state, euclideane)
+print(f"Path: {path}\nCost of Path: {path_cost}\nNodes Expanded: {nodes_expanded}\nSearch Depth: {search_depth}\nRuntime: {runtime:.4f} seconds\n")

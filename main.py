@@ -262,7 +262,8 @@ class Game:
                             self.buttons_list = []
                             self.buttons_list.append(Button(500, 100, 200, 50, "PAUSE", YELLOW, WHITE))
                             self.buttons_list.append(Button(500, 170, 200, 50, "RESET", RED, WHITE))
-                            self.directions = a_star(initial_state)
+                            self.directions, self.path_cost, self.nodes_expanded, self.path_length, self.running_time = A_star(initial_state, euclideane)
+                            self.directions, self.path_cost, self.nodes_expanded, self.path_length, self.running_time = A_star(initial_state, manhattan)
                         if button.text == "RESET":
                             self.new()
                         if button.text == "PAUSE":
