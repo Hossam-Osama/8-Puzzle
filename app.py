@@ -61,7 +61,6 @@ def bfs(start_puzzle):
     frontair.put((start_puzzle, []))
     nodes_expanded = 0
 
-    # Set to track states in frontair for quick lookup
     frontair_states = set()
     frontair_states.add(tuple(map(tuple, start_puzzle)))
 
@@ -77,10 +76,8 @@ def bfs(start_puzzle):
         for neighbor, direction in neighbors(puzzle):
             neighbor_tuple = tuple(map(tuple, neighbor))
 
-            # Check if the neighbor is not explored and not in frontair_states
             if neighbor_tuple not in explored and neighbor_tuple not in frontair_states:
                 frontair.put((neighbor, path + [direction]))
-                # Add the neighbor to the set of frontair states
                 frontair_states.add(neighbor_tuple)
 
     return None, nodes_expanded, len(path)
@@ -90,57 +87,71 @@ def dfs(start_puzzle, max_depth=float('inf')):
     start_time = time.time()
     frontair = [(start_puzzle, [])]
     explored = set()
-    nodes_expanded = 0
+    nodes_expanded = 0  
+    max_depth_reached = 0  
 
     while frontair:
         puzzle, path = frontair.pop()
-        nodes_expanded += 1
-
+        n = 0
+        n += 1
+        nodes_expanded += 1  
+        current_depth = len(path)
+        new_cost = len(path) - n 
+        cost = new_cost
         if is_goal_reached(puzzle):
-            return path, nodes_expanded, len(path), time.time() - start_time
+            cost = cost + 1
+            return path, cost, nodes_expanded, max_depth_reached, time.time() - start_time
 
         explored.add(tuple(map(tuple, puzzle)))
 
-        if len(path) < max_depth:
+        if current_depth < max_depth:
             for neighbor, direction in neighbors(puzzle):
-                if tuple(map(tuple, neighbor)) not in explored and all(tuple(map(tuple, neighbor)) != tuple(map(tuple, p[0])) for p in frontair):
+                if (tuple(map(tuple, neighbor)) not in explored and
+                        all(tuple(map(tuple, neighbor)) != tuple(map(tuple, p[0])) for p in frontair)):
+                    neighbor_depth = len(path)
+                    max_depth_reached = max(max_depth_reached,  neighbor_depth +1)  
                     frontair.append((neighbor, path + [direction]))
-    return None, nodes_expanded, len(path), time.time() - start_time
+                   
+    return None, nodes_expanded, max_depth_reached, time.time() - start_time
 
 
-def ddfs(start_puzzle, max_depth=float('inf')):
+def ddfs(start_puzzle, max_depth, explored_depth):
     frontair = [(start_puzzle, [])]
-    nodes_expanded = 0
+    nodes_expanded = 0  
+    max_depth_reached = 0  
 
     while frontair:
         puzzle, path = frontair.pop()
         nodes_expanded += 1
+        current_depth = len(path)
+        max_depth_reached = max(max_depth_reached, current_depth)  
 
         if is_goal_reached(puzzle):
-            return path, nodes_expanded, len(path)
+            return path, nodes_expanded, current_depth, max_depth_reached  
 
-        # Only go deeper if we haven't reached max_depth
-        if len(path) < max_depth:
-            for neighbor, direction in neighbors(puzzle):
-                # Avoid creating a new list; extend path temporarily
-                frontair.append((neighbor, path + [direction]))
+        puzzle_tuple = tuple(map(tuple, puzzle))
+        if puzzle_tuple not in explored_depth or current_depth < explored_depth[puzzle_tuple]:
+            explored_depth[puzzle_tuple] = current_depth
+            if current_depth < max_depth:
+                for neighbor, direction in neighbors(puzzle):
+                    neighbor_tuple = tuple(map(tuple, neighbor))
+                    neighbor_depth = current_depth + 1
+                    if neighbor_tuple not in explored_depth or neighbor_depth < explored_depth[neighbor_tuple]:
+                        frontair.append((neighbor, path + [direction]))
 
-    return None, nodes_expanded, len(path)
+    return None, nodes_expanded, 0, max_depth_reached  
 
 
-def iddfs(start_puzzle, max_depth=50):
-    start_time = time.time()
-    # Convert start_puzzle to tuple to avoid repeated conversion
+def iddfs(start_puzzle, max_depth):
     start_puzzle = tuple(map(tuple, start_puzzle))
-    nodes_expanded = 0
-
+    nodes_expanded = 0 
     for depth in range(max_depth):
-        path, expanded, search_depth = ddfs(start_puzzle, max_depth=depth)
+        explored_depth = {}  
+        path, expanded, search_depth, max_depth_reached = ddfs(start_puzzle, max_depth=depth, explored_depth=explored_depth)
         nodes_expanded += expanded
         if path is not None:
-            return path, nodes_expanded, search_depth, time.time() - start_time
-
-    return None, nodes_expanded, 0, time.time() - start_time
+            return path, nodes_expanded, search_depth, max_depth_reached  
+    return None, nodes_expanded, 0, max_depth  
 
 
 def manhattan(puzzle):
@@ -170,13 +181,13 @@ def euclideane(puzzle):
 def A_star(start_puzzle, heuristic):
     start_time = time.time()
     frontier = []
-    heapq.heappush(frontier, (0, start_puzzle, []))  # (cost, puzzle state, path)
+    heapq.heappush(frontier, (0, start_puzzle, []))  
     explored = set()
     nodes_expanded = 0
     max_depth_reached = 0  
 
     while frontier:
-        cost, puzzle, path = heapq.heappop(frontier)  # Pop the smallest cost node
+        cost, puzzle, path = heapq.heappop(frontier) 
         nodes_expanded += 1  
         current_depth = len(path)
         max_depth_reached = max(max_depth_reached, current_depth)  
@@ -189,45 +200,49 @@ def A_star(start_puzzle, heuristic):
         for neighbor, move_direction in neighbors(puzzle):
             if tuplee(neighbor) not in explored:
                 new_path = path + [move_direction]
-                new_cost = len(new_path) + heuristic(neighbor)  # Cost calculation
+                new_cost = len(new_path) + heuristic(neighbor) 
                 heapq.heappush(frontier, (new_cost, neighbor, new_path))
                 explored.add(tuplee(neighbor))
 
     return None
 # controller with Gui
-
-
 def solve_puzzle(start_puzzle, algorithm, limit=0):
     if not is_solvable(start_puzzle):
-        return "there is no possible solution??"
-    start_time = time.time()
+        return "There is no possible solution."
+    
+    start_time = time.time()  
+    path = None
+    nodes_expanded = 0
+    search_depth = 0
+    cost = 0
+    max_depth_reached = 0
+
     if algorithm == 'BFS':
-        path, nodes_expanded, search_depth = bfs(start_puzzle)
+        path, nodes_expanded, search_depth, running_time = bfs(start_puzzle)
+        cost = len(path) if path is not None else 0  
+        max_depth_reached = search_depth  
     elif algorithm == 'DFS':
-        path, nodes_expanded, search_depth, running_time = dfs(start_puzzle, max_depth=limit)
+        path, cost, nodes_expanded, max_depth_reached, running_time = dfs(start_puzzle, max_depth=limit)
+        search_depth = max_depth_reached  
     elif algorithm == 'IDDFS':
-        path, nodes_expanded, search_depth, running_time = iddfs(
-            start_puzzle, max_depth=limit)
-    # A*
-    elif algorithm == 'A*':
-        if (manhattan):
-            path, path_cost, nodes_expanded, search_depth = A_star(
-                initial_state, manhattan)
-        elif (euclideane):
-            path, path_cost, nodes_expanded, search_depth = A_star(
-                initial_state, euclideane)
-    # A*
+        path, nodes_expanded, search_depth, max_depth_reached = iddfs(start_puzzle, max_depth=limit)
+        cost = len(path) if path is not None else 0 
     else:
         raise ValueError("Unsupported algorithm")
 
-    running_time = time.time() - start_time
+    # Calculate total running time
+    running_time = (time.time() - start_time) * 1000  # Convert to milliseconds
+
     return {
-        'path': path,
+        # 'path': path,
+        'path_length':len(path),
         'nodes_expanded': nodes_expanded,
         'search_depth': search_depth,
-        'cost_of_path': len(path),
-        'running_time': running_time*1000
+        'cost_of_path': cost,
+        'max_depth_reached': max_depth_reached,
+        'running_time': running_time
     }
+
 
 
 def count_inversions(puzzle):
@@ -251,6 +266,39 @@ def is_solvable(puzzle):
 initial_state = [[8, 1, 2],
                  [0, 4, 3],
                  [7, 6, 5]]
+from pprint import pprint
+
+# # tests
+test_cases = [
+    {
+        "initial_state": [[1,2,3], [4,5,6], [0,7,8]],
+        "description": "Reverse order",
+        "goal": [[1, 0, 3], [4, 5, 6], [7, 8,2]]
+    }
+]
+
+# Run each test case for BFS, DFS, and IDDFS
+for i, case in enumerate(test_cases, 1):
+    print(f"Test Case {i}: {case['description']}")
+    initial_state = case["initial_state"]
+    goal = case["goal"]
+
+    # Solving using BFS
+    bfs_result = solve_puzzle(initial_state, 'BFS')
+    print("BFS Result:")
+    pprint(bfs_result)
+
+    # Solving using DFS with a reasonable depth limit (for demonstration, set to 200)
+    dfs_result = solve_puzzle(initial_state, 'DFS', limit=500)
+    print("DFS Result:")
+    pprint(dfs_result)
+
+    # Solving using IDDFS with a depth limit
+    iddfs_result = solve_puzzle(initial_state, 'IDDFS', limit=50)
+    print("IDDFS Result:")
+    pprint(iddfs_result)
+
+    print("\n" + "="*40 + "\n")
 # # Solving using BFS
 # bfs_result = solve_puzzle(initial_state, 'BFS')
 # print("BFS Result:", bfs_result)
