@@ -11,6 +11,6 @@ BGCOLOUR = DARKGREY
 WIDTH = 800
 HEIGHT = 641
 FPS = 60
-title = "Sliding Puzzle Game"
+title = "8 Puzzle Game"
 TILESIZE = 128
 GAME_SIZE = 3

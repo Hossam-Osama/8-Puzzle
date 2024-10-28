@@ -248,7 +248,7 @@ def is_solvable(puzzle):
 
 
 # Example puzzle state
-initial_state = [[1, 8, 2],
+initial_state = [[8, 1, 2],
                  [0, 4, 3],
                  [7, 6, 5]]
 # # Solving using BFS

@@ -15,8 +15,6 @@ class Game:
         pygame.display.set_caption(title)
         self.clock = pygame.time.Clock()
         self.solving_time = 0
-        # self.app = gui.App()
-        # self.popup_message = gui.Dialog(gui.Label("Puzzle is NOT Solvable"))
         self.paused = False
         self.start_solution = False
         self.previous_choice = ""
