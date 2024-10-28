@@ -6,6 +6,7 @@ from sprite import *
 from settings import *
 from app import *
 import copy
+import pyautogui
 
 class Game:
     def __init__(self):
@@ -14,6 +15,8 @@ class Game:
         pygame.display.set_caption(title)
         self.clock = pygame.time.Clock()
         self.solving_time = 0
+        # self.app = gui.App()
+        # self.popup_message = gui.Dialog(gui.Label("Puzzle is NOT Solvable"))
         self.paused = False
         self.start_solution = False
         self.previous_choice = ""
@@ -21,8 +24,9 @@ class Game:
         self.start_timer = False
         self.elapsed_time = 0
         self.directions = []
-        self.statistics = {"path_cost": 0, "nodes_expanded": 0, "running_time": 0}
-        self.statistics_manhaten = {"path_cost": 0, "nodes_expanded": 0, "running_time": 0}
+        self.statistics = {"path_cost": 0, "nodes_expanded": 0, "running_time": 0, "search_depth": 0}
+        self.statistics_manhaten = {"path_cost": 0, "nodes_expanded": 0, "running_time": 0, "search_depth": 0}
+        self.is_solvable = True
         self.a_star = False
         # Starting the mixer 
         mixer.init() 
@@ -37,6 +41,7 @@ class Game:
         grid = copy.deepcopy(initial_state)
         return grid
 
+        
     def solve(self):
         for row, tiles in enumerate(self.tiles):
             flag = 0
@@ -85,7 +90,7 @@ class Game:
         self.buttons_list.append(Button(500, 170, 200, 50, "DFS", WHITE, BLACK))
         self.buttons_list.append(Button(500, 240, 200, 50, "IDFS", WHITE, BLACK))
         self.buttons_list.append(Button(500, 310, 200, 50, "A*", WHITE, BLACK))
-        self.statistics = {"path_cost": 0, "nodes_expanded": 0, "running_time": 0}
+        self.statistics = {"path_cost": 0, "nodes_expanded": 0, "running_time": 0, "search_depth": 0}
         self.draw_tiles()
 
     def run(self):
@@ -138,14 +143,18 @@ class Game:
         self.draw_grid()
         for button in self.buttons_list:
             button.draw(self.screen)
-        
-        UIElement(35, 400, "Path Cost - %d" % (self.statistics["path_cost"])).draw(self.screen)
-        UIElement(35, 450, "Nodes Expanded - %d" % (self.statistics["nodes_expanded"])).draw(self.screen)
-        UIElement(35, 500, "Running Time - %.4f" % (self.statistics["running_time"])).draw(self.screen)
+        if is_solvable:
+            UIElement(35, 400, "Path Cost - %d" % (self.statistics["path_cost"])).draw(self.screen)
+            UIElement(35, 450, "Nodes Expanded - %d" % (self.statistics["nodes_expanded"])).draw(self.screen)
+            UIElement(35, 500, "Search Depth - %d" % (self.statistics["search_depth"])).draw(self.screen)
+            UIElement(35, 550, "Running Time - %.4f" % (self.statistics["running_time"])).draw(self.screen)
+        else:
+            UIElement(35, 400, "Puzzle is NOT Solvable").draw(self.screen)
         if self.a_star:
             UIElement(435, 400, "Path Cost - %d" % (self.statistics["path_cost"])).draw(self.screen)
             UIElement(435, 450, "Nodes Expanded - %d" % (self.statistics_manhaten["nodes_expanded"])).draw(self.screen)
-            UIElement(435, 500, "Running Time - %.4f" % (self.statistics_manhaten["running_time"])).draw(self.screen)
+            UIElement(435, 500, "Search Depth - %d" % (self.statistics_manhaten["search_depth"])).draw(self.screen)
+            UIElement(435, 550, "Running Time - %.4f" % (self.statistics_manhaten["running_time"])).draw(self.screen)
             UIElement(50, 600, "EUCLIDEAN").draw(self.screen)
             UIElement(450, 600, "MANHATEN").draw(self.screen)
         pygame.display.flip()
@@ -161,22 +170,28 @@ class Game:
 
                 for button in self.buttons_list:
                     if button.click(mouse_x, mouse_y):
+                        self.is_solvable = is_solvable(initial_state)
+                        if(not self.is_solvable):
+                            pyautogui.alert("The Puzzle is NOT solvable")
+                            return 
                         self.solving_time = 0
                         self.tiles_grid = self.create_game()
                         self.start_solution = True
                         self.buttons_list = []
                         self.buttons_list.append(Button(500, 100, 200, 50, "PAUSE", YELLOW, WHITE))
                         self.buttons_list.append(Button(500, 170, 200, 50, "RESET", RED, WHITE))
+                        
                         if button.text == "BFS":
                             self.directions, self.statistics["nodes_expanded"], self.statistics["path_cost"], self.statistics["running_time"] = bfs(initial_state)
                             print(initial_state)
                         if button.text == "DFS":
-                            self.directions, self.statistics["nodes_expanded"], self.statistics["path_cost"], self.statistics["running_time"] = dfs(initial_state, 200)
+                            self.directions, self.statistics["nodes_expanded"], self.statistics["path_cost"], self.statistics["running_time"] = dfs(initial_state, 500)
                         if button.text == 'IDFS':
                             self.directions, self.statistics["nodes_expanded"], self.statistics["path_cost"], self.statistics["running_time"] = iddfs(initial_state)
                         if button.text == 'A*':
-                            self.directions, self.statistics["path_cost"], self.statistics["nodes_expanded"], _, self.statistics["running_time"] = A_star(initial_state, euclideane)
-                            self.directions, self.statistics_manhaten["path_cost"], self.statistics_manhaten["nodes_expanded"], _, self.statistics_manhaten["running_time"] = A_star(initial_state, manhattan)
+                            self.directions, self.statistics["path_cost"], self.statistics["nodes_expanded"], self.statistics["search_depth"], self.statistics["running_time"] = A_star(initial_state, euclideane)
+                            print(self.statistics["search_depth"])
+                            self.directions, self.statistics_manhaten["path_cost"], self.statistics_manhaten["nodes_expanded"], self.statistics_manhaten["search_depth"], self.statistics_manhaten["running_time"] = A_star(initial_state, manhattan)
                             self.a_star = True
                         if button.text == "RESET":
                             self.new()
@@ -192,6 +207,11 @@ class Game:
                                                 is_paused = False
                                                 button.text = "PAUSE"
                                                 self.draw()
+
+
+
+
+
 
 game = Game()
 while True:

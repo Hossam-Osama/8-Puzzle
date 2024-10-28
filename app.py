@@ -268,7 +268,7 @@ initial_state = [[1, 8, 2],
 #     initial_state, manhattan)
 # print(f"Path: {path}\nCost of Path: {path_cost}\nNodes Expanded: {nodes_expanded}\nSearch Depth: {search_depth}\nRuntime: {runtime:.4f} seconds\n")
 
-# # Running A* with Euclidean heuristic
+# Running A* with Euclidean heuristic
 # print("A* with Euclidean Distance:")
 # path, path_cost, nodes_expanded, search_depth, runtime = A_star(
 #     initial_state, euclideane)
