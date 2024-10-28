@@ -24,7 +24,6 @@ class Game:
         self.statistics = {"path_cost": 0, "nodes_expanded": 0, "running_time": 0}
         self.statistics_manhaten = {"path_cost": 0, "nodes_expanded": 0, "running_time": 0}
         self.a_star = False
-        self.high_score = float(self.get_high_scores()[0])
         # Starting the mixer 
         mixer.init() 
         
@@ -169,12 +168,12 @@ class Game:
                         self.buttons_list.append(Button(500, 100, 200, 50, "PAUSE", YELLOW, WHITE))
                         self.buttons_list.append(Button(500, 170, 200, 50, "RESET", RED, WHITE))
                         if button.text == "BFS":
-                            self.directions = bfs(initial_state)
+                            self.directions, self.statistics["nodes_expanded"], self.statistics["path_cost"], self.statistics["running_time"] = bfs(initial_state)
                             print(initial_state)
                         if button.text == "DFS":
-                            self.directions = dfs(initial_state)
+                            self.directions, self.statistics["nodes_expanded"], self.statistics["path_cost"], self.statistics["running_time"] = dfs(initial_state, 200)
                         if button.text == 'IDFS':
-                            self.directions = iddfs(initial_state)
+                            self.directions, self.statistics["nodes_expanded"], self.statistics["path_cost"], self.statistics["running_time"] = iddfs(initial_state)
                         if button.text == 'A*':
                             self.directions, self.statistics["path_cost"], self.statistics["nodes_expanded"], _, self.statistics["running_time"] = A_star(initial_state, euclideane)
                             self.directions, self.statistics_manhaten["path_cost"], self.statistics_manhaten["nodes_expanded"], _, self.statistics_manhaten["running_time"] = A_star(initial_state, manhattan)

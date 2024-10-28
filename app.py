@@ -55,6 +55,7 @@ def print_puzzle(puzzle):
 
 
 def bfs(start_puzzle):
+    start_time = time.time()
     frontair = Queue()
     explored = set()
     frontair.put((start_puzzle, []))
@@ -69,7 +70,7 @@ def bfs(start_puzzle):
         nodes_expanded += 1
 
         if is_goal_reached(puzzle):
-            return path, nodes_expanded, len(path)
+            return path, nodes_expanded, len(path), time.time() - start_time
 
         explored.add(tuple(map(tuple, puzzle)))
 
@@ -86,6 +87,7 @@ def bfs(start_puzzle):
 
 
 def dfs(start_puzzle, max_depth=float('inf')):
+    start_time = time.time()
     frontair = [(start_puzzle, [])]
     explored = set()
     nodes_expanded = 0
@@ -95,7 +97,7 @@ def dfs(start_puzzle, max_depth=float('inf')):
         nodes_expanded += 1
 
         if is_goal_reached(puzzle):
-            return path, nodes_expanded, len(path)
+            return path, nodes_expanded, len(path), time.time() - start_time
 
         explored.add(tuple(map(tuple, puzzle)))
 
@@ -103,7 +105,7 @@ def dfs(start_puzzle, max_depth=float('inf')):
             for neighbor, direction in neighbors(puzzle):
                 if tuple(map(tuple, neighbor)) not in explored and all(tuple(map(tuple, neighbor)) != tuple(map(tuple, p[0])) for p in frontair):
                     frontair.append((neighbor, path + [direction]))
-    return None, nodes_expanded, len(path)
+    return None, nodes_expanded, len(path), time.time() - start_time
 
 
 def ddfs(start_puzzle, max_depth=float('inf')):
@@ -127,6 +129,7 @@ def ddfs(start_puzzle, max_depth=float('inf')):
 
 
 def iddfs(start_puzzle, max_depth=50):
+    start_time = time.time()
     # Convert start_puzzle to tuple to avoid repeated conversion
     start_puzzle = tuple(map(tuple, start_puzzle))
     nodes_expanded = 0
@@ -135,9 +138,9 @@ def iddfs(start_puzzle, max_depth=50):
         path, expanded, search_depth = ddfs(start_puzzle, max_depth=depth)
         nodes_expanded += expanded
         if path is not None:
-            return path, nodes_expanded, search_depth
+            return path, nodes_expanded, search_depth, time.time() - start_time
 
-    return None, nodes_expanded, 0
+    return None, nodes_expanded, 0, time.time() - start_time
 
 
 def manhattan(puzzle):
@@ -197,9 +200,9 @@ def solve_puzzle(start_puzzle, algorithm, limit=0):
     if algorithm == 'BFS':
         path, nodes_expanded, search_depth = bfs(start_puzzle)
     elif algorithm == 'DFS':
-        path, nodes_expanded, search_depth = dfs(start_puzzle, max_depth=limit)
+        path, nodes_expanded, search_depth, running_time = dfs(start_puzzle, max_depth=limit)
     elif algorithm == 'IDDFS':
-        path, nodes_expanded, search_depth = iddfs(
+        path, nodes_expanded, search_depth, running_time = iddfs(
             start_puzzle, max_depth=limit)
     # A*
     elif algorithm == 'A*':
@@ -244,25 +247,25 @@ def is_solvable(puzzle):
 initial_state = [[1, 8, 2],
                  [0, 4, 3],
                  [7, 6, 5]]
-# Solving using BFS
-bfs_result = solve_puzzle(initial_state, 'BFS')
-print("BFS Result:", bfs_result)
+# # Solving using BFS
+# bfs_result = solve_puzzle(initial_state, 'BFS')
+# print("BFS Result:", bfs_result)
 
-# Solving using DFS
-dfs_result = solve_puzzle(initial_state, 'DFS', 200)
-print("DFS Result:", dfs_result)
+# # Solving using DFS
+# dfs_result = solve_puzzle(initial_state, 'DFS', 200)
+# print("DFS Result:", dfs_result)
 
-# Solving using IDDFS with default = 30
-iddfs_result = solve_puzzle(initial_state, 'IDDFS', 30)
-print("IDDFS Result:", iddfs_result)
-# Running A* with Manhattan heuristic
-print("A* with Manhattan Distance:")
-path, path_cost, nodes_expanded, search_depth, runtime = A_star(
-    initial_state, manhattan)
-print(f"Path: {path}\nCost of Path: {path_cost}\nNodes Expanded: {nodes_expanded}\nSearch Depth: {search_depth}\nRuntime: {runtime:.4f} seconds\n")
+# # Solving using IDDFS with default = 30
+# iddfs_result = solve_puzzle(initial_state, 'IDDFS', 200)
+# print("IDDFS Result:", iddfs_result)
+# # Running A* with Manhattan heuristic
+# print("A* with Manhattan Distance:")
+# path, path_cost, nodes_expanded, search_depth, runtime = A_star(
+#     initial_state, manhattan)
+# print(f"Path: {path}\nCost of Path: {path_cost}\nNodes Expanded: {nodes_expanded}\nSearch Depth: {search_depth}\nRuntime: {runtime:.4f} seconds\n")
 
-# Running A* with Euclidean heuristic
-print("A* with Euclidean Distance:")
-path, path_cost, nodes_expanded, search_depth, runtime = A_star(
-    initial_state, euclideane)
-print(f"Path: {path}\nCost of Path: {path_cost}\nNodes Expanded: {nodes_expanded}\nSearch Depth: {search_depth}\nRuntime: {runtime:.4f} seconds\n")
+# # Running A* with Euclidean heuristic
+# print("A* with Euclidean Distance:")
+# path, path_cost, nodes_expanded, search_depth, runtime = A_star(
+#     initial_state, euclideane)
+# print(f"Path: {path}\nCost of Path: {path_cost}\nNodes Expanded: {nodes_expanded}\nSearch Depth: {search_depth}\nRuntime: {runtime:.4f} seconds\n")
