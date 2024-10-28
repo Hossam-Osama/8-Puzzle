@@ -90,31 +90,35 @@ def euclideane(puzzle):
 def A_star(start_puzzle, heuristic):
     start_time = time.time()
     frontier = []
-    heapq.heappush(frontier, (0, start_puzzle, []))  
+    heapq.heappush(frontier, (0, start_puzzle, []))  # (cost, puzzle state, path)
     explored = set()
     nodes_expanded = 0
-    
+    max_depth_reached = 0  
+
     while frontier:
-        cost, puzzle, path = heapq.heappop(frontier)   ## he pop the smallest here according to the cost
+        cost, puzzle, path = heapq.heappop(frontier)  # Pop the smallest cost node
+        nodes_expanded += 1  
+        current_depth = len(path)
+        max_depth_reached = max(max_depth_reached, current_depth)  
+
         if is_goal_reached(puzzle):
-            path_cost = len(path) 
-            return path, path_cost, nodes_expanded, len(path), time.time() - start_time
+            path_cost = len(path)
+            return path, path_cost, nodes_expanded, max_depth_reached, time.time() - start_time
         
         explored.add(tuplee(puzzle))
         for neighbor, move_direction in neighbors(puzzle):
             if tuplee(neighbor) not in explored:
                 new_path = path + [move_direction]
-                new_cost = len(new_path) + heuristic(neighbor)  
+                new_cost = len(new_path) + heuristic(neighbor)  # Cost calculation
                 heapq.heappush(frontier, (new_cost, neighbor, new_path))
                 explored.add(tuplee(neighbor))
-                nodes_expanded += 1  
-    
+
     return None
 
 # Example puzzle state
-initial_state = [[1, 8, 2],
-                 [0, 4, 3],
-                 [7, 6, 5]]
+initial_state = [[1, 4, 2],
+                 [6, 5, 8],
+                 [7, 3, 0]]
 
 # Running A* with Manhattan heuristic
 print("A* with Manhattan Distance:")
