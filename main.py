@@ -15,13 +15,15 @@ class Game:
         self.clock = pygame.time.Clock()
         self.solving_time = 0
         self.paused = False
-        self.start_shuffle = False
         self.start_solution = False
         self.previous_choice = ""
         self.start_game = False
         self.start_timer = False
         self.elapsed_time = 0
         self.directions = []
+        self.statistics = {"path_cost": 0, "nodes_expanded": 0, "running_time": 0}
+        self.statistics_manhaten = {"path_cost": 0, "nodes_expanded": 0, "running_time": 0}
+        self.a_star = False
         self.high_score = float(self.get_high_scores()[0])
         # Starting the mixer 
         mixer.init() 
@@ -32,61 +34,10 @@ class Game:
         # Setting the volume 
         mixer.music.set_volume(0.7) 
 
-    def get_high_scores(self):
-        with open("high_score.txt", "r") as file:
-            scores = file.read().splitlines()
-        return scores
-
-    def save_score(self):
-        with open("high_score.txt", "w") as file:
-            file.write(str("%.3f\n" % self.high_score))
-
     def create_game(self):
-        # grid = [[x + y * GAME_SIZE for x in range(1, GAME_SIZE + 1)] for y in range(GAME_SIZE)]
-        # grid[-1][-1] = 0
         grid = copy.deepcopy(initial_state)
         return grid
 
-    def shuffle(self):
-        possible_moves = []
-        for row, tiles in enumerate(self.tiles):
-            for col, tile in enumerate(tiles):
-                if tile.text == "empty":
-                    if tile.right():
-                        possible_moves.append("right")
-                    if tile.left():
-                        possible_moves.append("left")
-                    if tile.up():
-                        possible_moves.append("up")
-                    if tile.down():
-                        possible_moves.append("down")
-                    break
-            if len(possible_moves) > 0:
-                break
-
-        if self.previous_choice == "right":
-            possible_moves.remove("left") if "left" in possible_moves else possible_moves
-        elif self.previous_choice == "left":
-            possible_moves.remove("right") if "right" in possible_moves else possible_moves
-        elif self.previous_choice == "up":
-            possible_moves.remove("down") if "down" in possible_moves else possible_moves
-        elif self.previous_choice == "down":
-            possible_moves.remove("up") if "up" in possible_moves else possible_moves
-
-        choice = random.choice(possible_moves)
-        self.previous_choice = choice
-        if choice == "right":
-            self.tiles_grid[row][col], self.tiles_grid[row][col + 1] = self.tiles_grid[row][col + 1], \
-                                                                       self.tiles_grid[row][col]
-        elif choice == "left":
-            self.tiles_grid[row][col], self.tiles_grid[row][col - 1] = self.tiles_grid[row][col - 1], \
-                                                                       self.tiles_grid[row][col]
-        elif choice == "up":
-            self.tiles_grid[row][col], self.tiles_grid[row - 1][col] = self.tiles_grid[row - 1][col], \
-                                                                       self.tiles_grid[row][col]
-        elif choice == "down":
-            self.tiles_grid[row][col], self.tiles_grid[row + 1][col] = self.tiles_grid[row + 1][col], \
-                                                                       self.tiles_grid[row][col]
     def solve(self):
         for row, tiles in enumerate(self.tiles):
             flag = 0
@@ -97,28 +48,19 @@ class Game:
             if flag == 1:
                 flag = 0
                 break
-        print(row, col)
         direction = self.directions[self.solving_time]
         if direction.lower() == "right":
-            print(row, col)
             self.tiles_grid[row][col], self.tiles_grid[row][col + 1] = self.tiles_grid[row][col + 1], \
                                                                     self.tiles_grid[row][col]
-            print("right")
         elif direction.lower() == "left":
-            print(row, col)
             self.tiles_grid[row][col], self.tiles_grid[row][col - 1] = self.tiles_grid[row][col - 1], \
                                                                         self.tiles_grid[row][col]
-            print("left")
         elif direction.lower() == "up":
-            print(row, col)
             self.tiles_grid[row][col], self.tiles_grid[row - 1][col] = self.tiles_grid[row - 1][col], \
                                                                         self.tiles_grid[row][col]
-            print("down")
         elif direction.lower() == "down":
-            print(row, col)
             self.tiles_grid[row][col], self.tiles_grid[row + 1][col] = self.tiles_grid[row + 1][col], \
                                                                        self.tiles_grid[row][col]
-            print("up")
         
     def draw_tiles(self):
         self.tiles = []
@@ -138,13 +80,13 @@ class Game:
         self.start_timer = False
         self.start_game = False
         self.start_solution = False
+        self.a_star = False
         self.buttons_list = []
         self.buttons_list.append(Button(500, 100, 200, 50, "BFS", WHITE, BLACK))
         self.buttons_list.append(Button(500, 170, 200, 50, "DFS", WHITE, BLACK))
         self.buttons_list.append(Button(500, 240, 200, 50, "IDFS", WHITE, BLACK))
         self.buttons_list.append(Button(500, 310, 200, 50, "A*", WHITE, BLACK))
-        self.buttons_list.append(Button(500, 380, 200, 50, "PAUSE", YELLOW, WHITE))
-        self.buttons_list.append(Button(500, 450, 200, 50, "RESET", RED, WHITE))
+        self.statistics = {"path_cost": 0, "nodes_expanded": 0, "running_time": 0}
         self.draw_tiles()
 
     def run(self):
@@ -197,8 +139,16 @@ class Game:
         self.draw_grid()
         for button in self.buttons_list:
             button.draw(self.screen)
-        # UIElement(550, 35, "%.3f" % self.elapsed_time).draw(self.screen)
-        # UIElement(430, 300, "High Score - %.3f" % (self.high_score if self.high_score > 0 else 0)).draw(self.screen)
+        
+        UIElement(35, 400, "Path Cost - %d" % (self.statistics["path_cost"])).draw(self.screen)
+        UIElement(35, 450, "Nodes Expanded - %d" % (self.statistics["nodes_expanded"])).draw(self.screen)
+        UIElement(35, 500, "Running Time - %.4f" % (self.statistics["running_time"])).draw(self.screen)
+        if self.a_star:
+            UIElement(435, 400, "Path Cost - %d" % (self.statistics["path_cost"])).draw(self.screen)
+            UIElement(435, 450, "Nodes Expanded - %d" % (self.statistics_manhaten["nodes_expanded"])).draw(self.screen)
+            UIElement(435, 500, "Running Time - %.4f" % (self.statistics_manhaten["running_time"])).draw(self.screen)
+            UIElement(50, 600, "EUCLIDEAN").draw(self.screen)
+            UIElement(450, 600, "MANHATEN").draw(self.screen)
         pygame.display.flip()
 
     def events(self):
@@ -209,61 +159,26 @@ class Game:
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
-                for row, tiles in enumerate(self.tiles):
-                    for col, tile in enumerate(tiles):
-                        if tile.click(mouse_x, mouse_y):
-                            if tile.right() and self.tiles_grid[row][col + 1] == 0:
-                                self.tiles_grid[row][col], self.tiles_grid[row][col + 1] = self.tiles_grid[row][col + 1], self.tiles_grid[row][col]
-
-                            if tile.left() and self.tiles_grid[row][col - 1] == 0:
-                                self.tiles_grid[row][col], self.tiles_grid[row][col - 1] = self.tiles_grid[row][col - 1], self.tiles_grid[row][col]
-
-                            if tile.up() and self.tiles_grid[row - 1][col] == 0:
-                                self.tiles_grid[row][col], self.tiles_grid[row - 1][col] = self.tiles_grid[row - 1][col], self.tiles_grid[row][col]
-
-                            if tile.down() and self.tiles_grid[row + 1][col] == 0:
-                                self.tiles_grid[row][col], self.tiles_grid[row + 1][col] = self.tiles_grid[row + 1][col], self.tiles_grid[row][col]
-
-                            self.draw_tiles()
 
                 for button in self.buttons_list:
                     if button.click(mouse_x, mouse_y):
+                        self.solving_time = 0
+                        self.tiles_grid = self.create_game()
+                        self.start_solution = True
+                        self.buttons_list = []
+                        self.buttons_list.append(Button(500, 100, 200, 50, "PAUSE", YELLOW, WHITE))
+                        self.buttons_list.append(Button(500, 170, 200, 50, "RESET", RED, WHITE))
                         if button.text == "BFS":
-                            self.solving_time = 0
-                            self.tiles_grid = self.create_game()
-                            self.solving_time = 0
-                            self.start_solution = True
-                            self.buttons_list = []
-                            self.buttons_list.append(Button(500, 100, 200, 50, "PAUSE", YELLOW, WHITE))
-                            self.buttons_list.append(Button(500, 170, 200, 50, "RESET", RED, WHITE))
-                            self.draw()
                             self.directions = bfs(initial_state)
                             print(initial_state)
                         if button.text == "DFS":
-                            self.solving_time = 0
-                            self.tiles_grid = self.create_game()
-                            self.start_solution = True
-                            self.buttons_list = []
-                            self.buttons_list.append(Button(500, 100, 200, 50, "PAUSE", YELLOW, WHITE))
-                            self.buttons_list.append(Button(500, 170, 200, 50, "RESET", RED, WHITE))
                             self.directions = dfs(initial_state)
                         if button.text == 'IDFS':
-                            self.solving_time = 0
-                            self.tiles_grid = self.create_game()
-                            self.start_solution = True
-                            self.buttons_list = []
-                            self.buttons_list.append(Button(500, 100, 200, 50, "PAUSE", YELLOW, WHITE))
-                            self.buttons_list.append(Button(500, 170, 200, 50, "RESET", RED, WHITE))
                             self.directions = iddfs(initial_state)
                         if button.text == 'A*':
-                            self.solving_time = 0
-                            self.tiles_grid = self.create_game()
-                            self.start_solution = True
-                            self.buttons_list = []
-                            self.buttons_list.append(Button(500, 100, 200, 50, "PAUSE", YELLOW, WHITE))
-                            self.buttons_list.append(Button(500, 170, 200, 50, "RESET", RED, WHITE))
-                            self.directions, self.path_cost, self.nodes_expanded, self.path_length, self.running_time = A_star(initial_state, euclideane)
-                            self.directions, self.path_cost, self.nodes_expanded, self.path_length, self.running_time = A_star(initial_state, manhattan)
+                            self.directions, self.statistics["path_cost"], self.statistics["nodes_expanded"], _, self.statistics["running_time"] = A_star(initial_state, euclideane)
+                            self.directions, self.statistics_manhaten["path_cost"], self.statistics_manhaten["nodes_expanded"], _, self.statistics_manhaten["running_time"] = A_star(initial_state, manhattan)
+                            self.a_star = True
                         if button.text == "RESET":
                             self.new()
                         if button.text == "PAUSE":
